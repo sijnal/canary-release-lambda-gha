@@ -53,7 +53,7 @@ jobs:
               --function-name MyLambdaFunction \
               --name live \
               --function-version $VERSION \
-              --routing-config '{"AdditionalVersionWeights": {"$VERSION": 0.1}}'
+              --routing-config '{"AdditionalVersionWeights": {"'$VERSION'": 0.1}}'
           else
             echo "Version $VERSION is already active in alias 'live'. Skipping update."
           fi
