@@ -30,6 +30,14 @@ jobs:
           aws lambda update-function-code \
             --function-name MyLambdaFunction \
             --zip-file fileb://lambda_package.zip
+    
+      - name: Check if function is active
+        run: |
+          STATUS=$(aws lambda get-function --function-name MyLambdaFunction --query 'Configuration.State' --output text)
+          if [ "$STATUS" != "Active" ]; then
+            echo "Function is not active, exiting."
+            exit 1
+          fi
 
       - name: Publish New Version
         run: |
