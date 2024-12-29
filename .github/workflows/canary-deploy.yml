@@ -42,23 +42,17 @@ jobs:
       - name: Publish New Version
         run: |
           VERSION=$(aws lambda publish-version --function-name MyLambdaFunction --query 'Version' --output text)
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          printf "New version published: %s\n" $VERSION
 
       - name: Configure Canary Deployment
         run: |
-          CURRENT_VERSION=$(aws lambda get-alias --function-name MyLambdaFunction --name live --query 'FunctionVersion' --output text)
-          if [[ "$CURRENT_VERSION" != "$VERSION" ]]; then
-            aws lambda update-alias \
-              --function-name MyLambdaFunction \
-              --name live \
-              --function-version $VERSION \
-              --routing-config '{"AdditionalVersionWeights": {"'$VERSION'": 0.1}}'
-          else
-            echo "Version $VERSION is already active in alias 'live'. Skipping update."
-          fi
+          STABLE_VERSION=$(aws lambda get-alias --function-name MyLambdaFunction --name live --query 'FunctionVersion' --output text)
+          
+          aws lambda update-alias \
+            --function-name MyLambdaFunction \
+            --name live \
+            --function-version $STABLE_VERSION \
+            --routing-config '{"AdditionalVersionWeights": {"'$VERSION'": 0.1}}'
         
-
       - name: Finalize Canary Deployment
         run: |
           echo "Waiting for 5 minutes..."
