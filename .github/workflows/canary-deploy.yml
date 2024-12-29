@@ -61,5 +61,5 @@ jobs:
           aws lambda update-alias \
             --function-name MyLambdaFunction \
             --name live \
-            --function-version ${{ env.VERSION }}
+            --function-version ${{ env.VERSION }} \
             --routing-config '{"AdditionalVersionWeights": {}}'
