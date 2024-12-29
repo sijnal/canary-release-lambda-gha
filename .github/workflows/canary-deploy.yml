@@ -56,9 +56,10 @@ jobs:
         
       - name: Finalize Canary Deployment
         run: |
-          echo "Waiting for 5 minutes..."
-          sleep 300 
+          echo "Waiting for 1 minutes..."
+          sleep 60 
           aws lambda update-alias \
             --function-name MyLambdaFunction \
             --name live \
             --function-version ${{ env.VERSION }}
+            --routing-config '{"AdditionalVersionWeights": {}}'
