@@ -1,5 +1,5 @@
 name: Canary Deploy for Lambda
-run-name: ${{ github.actor }} está ejecutando este workflow
+run-name: ${{ github.actor }} start workflow
 on:
   push:
     branches:
