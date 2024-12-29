@@ -43,6 +43,7 @@ jobs:
         run: |
           VERSION=$(aws lambda publish-version --function-name MyLambdaFunction --query 'Version' --output text)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
+          printf "New version published: %s\n" $VERSION
 
       - name: Configure Canary Deployment
         run: |
@@ -50,7 +51,7 @@ jobs:
             --function-name MyLambdaFunction \
             --name live \
             --function-version $VERSION \
-            --routing-config '{"AdditionalVersionWeights": {"<version_number>": 0.1}}'
+            --routing-config '{"AdditionalVersionWeights": {"'${{ env.VERSION }}'": 0.1}}'
 
       - name: Finalize Canary Deployment
         run: |
