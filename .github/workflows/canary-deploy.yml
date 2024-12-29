@@ -42,6 +42,7 @@ jobs:
       - name: Publish New Version
         run: |
           VERSION=$(aws lambda publish-version --function-name MyLambdaFunction --query 'Version' --output text)
+          echo VERSION=$VERSION >> $GITHUB_ENV
 
       - name: Configure Canary Deployment
         run: |
@@ -51,7 +52,7 @@ jobs:
             --function-name MyLambdaFunction \
             --name live \
             --function-version $STABLE_VERSION \
-            --routing-config '{"AdditionalVersionWeights": {"'$VERSION'": 0.1}}'
+            --routing-config '{"AdditionalVersionWeights": {"${{ env.VERSION }}": 0.1}}'
         
       - name: Finalize Canary Deployment
         run: |
@@ -60,4 +61,4 @@ jobs:
           aws lambda update-alias \
             --function-name MyLambdaFunction \
             --name live \
-            --function-version $VERSION
+            --function-version ${{ env.VERSION }}
