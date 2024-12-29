@@ -51,7 +51,7 @@ jobs:
             --function-name MyLambdaFunction \
             --name live \
             --function-version $VERSION \
-            --routing-config '{"AdditionalVersionWeights": {"'${{ env.VERSION }}'": 0.1}}'
+            --routing-config '{"AdditionalVersionWeights": {"${{ env.VERSION }}": 0.1}}'
 
       - name: Finalize Canary Deployment
         run: |
