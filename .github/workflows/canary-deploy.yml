@@ -25,42 +25,11 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1  
 
-      - name: Check if Lambda Function Exists
-        id: check_lambda
-        run: |
-          set +e
-          aws lambda get-function --function-name MyLambdaFunction > /dev/null 2>&1
-          if [ $? -eq 0 ]; then
-            echo "exists=true" >> $GITHUB_ENV
-          else
-            echo "exists=false" >> $GITHUB_ENV
-          fi
-          set -e
-  
       - name: Update Lambda Function Code
-        if: ${{ env.exists }} == 'true'
         run: |
           aws lambda update-function-code \
             --function-name MyLambdaFunction \
             --zip-file fileb://lambda_package.zip
-  
-      - name: Create Lambda Function
-        if: ${{ env.exists }} == 'false'
-        run: |
-          aws lambda create-function \
-            --function-name MyLambdaFunction \
-            --zip-file fileb://lambda_package.zip \
-            --handler lambda_function.lambda_handler \
-            --runtime python3.12 \
-            --role arn:aws:iam::123456789012:role/MyLambdaExecutionRole
-    
-      - name: Check if function is active
-        run: |
-          STATUS=$(aws lambda get-function --function-name MyLambdaFunction --query 'Configuration.State' --output text)
-          if [ "$STATUS" != "Active" ]; then
-            echo "Function is not active, exiting."
-            exit 1
-          fi
 
       - name: Publish New Version
         run: |
