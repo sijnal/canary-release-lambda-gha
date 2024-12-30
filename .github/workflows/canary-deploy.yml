@@ -25,19 +25,11 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1  
 
-      - name: Update o Create Lambda Function Code
+      - name: Update Lambda Function Code
         run: |
-          if aws lambda update-function-code --function-name MyLambdaFunctionCanary --zip-file fileb://lambda_package.zip; then
-            echo "La función Lambda se actualizó correctamente."
-          else
-            echo "La función Lambda no existe, creando una nueva..."
-            aws lambda create-function \
-              --function-name MyLambdaFunctionCanary \
-              --runtime python3.12 \
-              --role arn:aws:iam::713017167472:role/LambdaRole \
-              --handler lambda_function.lambda_handler \
-              --zip-file fileb://lambda_package.zip
-          fi
+          aws lambda update-function-code \
+            --function-name MyLambdaFunctionCanary \
+            --zip-file fileb://lambda_package.zip
 
       - name: Publish New Version
         run: |
