@@ -49,31 +49,15 @@ jobs:
 
       - name: Monitor Canary Stability
         run: |
-          echo "Monitoring Canary Deployment for 2 minutes..."
-          sleep 60
           
-          ALARM_STATE=$(aws cloudwatch get-metric-data \
-            --metric-data-queries '[{
-              "Id":"errorsCheck",
-              "MetricStat":{
-                "Metric":{
-                  "Namespace":"AWS/Lambda",
-                  "MetricName":"Errors",
-                  "Dimensions":[
-                    {"Name":"FunctionName", "Value":"MyLambdaFunctionCanary"},
-                    {"Name":"Resource", "Value":"MyLambdaFunctionCanary:${{ env.VERSION }}"}
-                  ]
-                },
-                "Period":60,
-                "Stat":"Sum"
-              }
-            }]' \
-            --start-time $(date -u -d "-2 minutes" +"%Y-%m-%dT%H:%M:%SZ") \
-            --end-time $(date -u +"%Y-%m-%dT%H:%M:%SZ") \
-            --query 'MetricDataResults[0].Values[0]' \
+          STATUS_CODE=$(aws lambda invoke \
+            --function-name MyLambdaFunctionCanary \
+            --payload '{}' \
+            response.json \
+            --query 'FunctionError' \
             --output text)
 
-          if [[ -z "$ALARM_STATE" || "$ALARM_STATE" -gt 0 ]]; then
+          if [[ "$FUNCTION_ERROR" != "None" && -n "$FUNCTION_ERROR" ]]; then
             echo "Errors detected in Canary Deployment! Rolling back to stable version..."
             aws lambda update-alias \
               --function-name MyLambdaFunctionCanary \
