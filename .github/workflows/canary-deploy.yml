@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  deploy:
+  deploy-canary-lambda:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,31 +28,31 @@ jobs:
       - name: Update Lambda Function Code
         run: |
           aws lambda update-function-code \
-            --function-name MyLambdaFunction \
+            --function-name MyLambdaFunctionCanary \
             --zip-file fileb://lambda_package.zip
 
       - name: Publish New Version
         run: |
           sleep 10 
-          VERSION=$(aws lambda publish-version --function-name MyLambdaFunction --query 'Version' --output text)
+          VERSION=$(aws lambda publish-version --function-name MyLambdaFunctionCanary --query 'Version' --output text)
           echo VERSION=$VERSION >> $GITHUB_ENV
 
       - name: Configure Canary Deployment
         run: |
-          STABLE_VERSION=$(aws lambda get-alias --function-name MyLambdaFunction --name live --query 'FunctionVersion' --output text)
+          STABLE_VERSION=$(aws lambda get-alias --function-name MyLambdaFunctionCanary --name prod --query 'FunctionVersion' --output text)
           
           aws lambda update-alias \
-            --function-name MyLambdaFunction \
-            --name live \
+            --function-name MyLambdaFunctionCanary \
+            --name prod \
             --function-version $STABLE_VERSION \
             --routing-config '{"AdditionalVersionWeights": {"${{ env.VERSION }}": 0.1}}'
         
       - name: Finalize Canary Deployment
         run: |
-          echo "Waiting for 1 minutes..."
-          sleep 60 
+          echo "Waiting for 2 minutes..."
+          sleep 120 
           aws lambda update-alias \
-            --function-name MyLambdaFunction \
-            --name live \
+            --function-name MyLambdaFunctionCanary \
+            --name prod \
             --function-version ${{ env.VERSION }} \
             --routing-config '{"AdditionalVersionWeights": {}}'
