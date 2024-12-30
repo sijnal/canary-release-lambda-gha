@@ -38,7 +38,6 @@ jobs:
               --zip-file fileb://lambda_package.zip
           fi
 
-
       - name: Publish New Version
         run: |
           sleep 10 
