@@ -40,11 +40,12 @@ jobs:
       - name: Configure Canary Deployment
         run: |
           STABLE_VERSION=$(aws lambda get-alias --function-name MyLambdaFunctionCanary --name prod --query 'FunctionVersion' --output text)
+          echo STABLE_VERSION=$STABLE_VERSION >> $GITHUB_ENV
           
           aws lambda update-alias \
             --function-name MyLambdaFunctionCanary \
             --name prod \
-            --function-version $STABLE_VERSION \
+            --function-version "${{ env.STABLE_VERSION }}" \
             --routing-config '{"AdditionalVersionWeights": {"${{ env.VERSION }}": 0.1}}'
 
       - name: Monitor Canary Stability
@@ -62,7 +63,7 @@ jobs:
             aws lambda update-alias \
               --function-name MyLambdaFunctionCanary \
               --name prod \
-              --function-version $STABLE_VERSION \
+              --function-version "${{ env.STABLE_VERSION }}" \
               --routing-config '{"AdditionalVersionWeights": {}}'
             exit 1
           else
