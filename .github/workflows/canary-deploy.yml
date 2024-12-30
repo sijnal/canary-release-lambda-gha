@@ -52,6 +52,7 @@ jobs:
               --zip-file fileb://lambda_package.zip \
               --handler lambda_function.lambda_handler \
               --runtime python3.12
+              --role arn:aws:iam::767397806650:role/MyLambdaExecutionRole
     
       - name: Check if function is active
         run: |
