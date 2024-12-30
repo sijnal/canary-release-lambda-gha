@@ -50,9 +50,8 @@ jobs:
       - name: Monitor Canary Stability
         run: |
           echo "Monitoring Canary Deployment for 2 minutes..."
-          sleep 120
+          sleep 60
           
-          # Filtrar métricas por alias "prod"
           ALARM_STATE=$(aws cloudwatch get-metric-data \
             --metric-data-queries '[{
               "Id":"errorsCheck",
