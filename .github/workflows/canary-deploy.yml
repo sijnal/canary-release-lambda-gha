@@ -34,6 +34,8 @@ jobs:
             aws lambda create-function \
               --function-name MyLambdaFunctionCanary \
               --runtime python3.12 \
+              --role-name LambdaExecutionRole \
+              --assume-role-policy-document file://trust-policy.json \
               --handler lambda_function.lambda_handler \
               --zip-file fileb://lambda_package.zip
           fi
