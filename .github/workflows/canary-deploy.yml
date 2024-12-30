@@ -33,6 +33,7 @@ jobs:
 
       - name: Publish New Version
         run: |
+          sleep 10 
           VERSION=$(aws lambda publish-version --function-name MyLambdaFunction --query 'Version' --output text)
           echo VERSION=$VERSION >> $GITHUB_ENV
 
