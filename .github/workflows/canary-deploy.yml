@@ -58,7 +58,7 @@ jobs:
             --query 'FunctionError' \
             --output text)
 
-          if [[ "$FUNCTION_ERROR" != "None" && -n "$FUNCTION_ERROR" ]]; then
+          if [[ "$STATUS_CODE" != "None" && -n "$STATUS_CODE" ]]; then
             echo "Errors detected in Canary Deployment! Rolling back to stable version..."
             aws lambda update-alias \
               --function-name MyLambdaFunctionCanary \
