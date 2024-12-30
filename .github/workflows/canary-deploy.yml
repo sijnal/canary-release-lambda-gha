@@ -56,7 +56,7 @@ jobs:
 
       - name: Monitor Canary Stability
         run: |
-          
+          sleep 90
           STATUS_CODE=$(aws lambda invoke \
             --function-name MyLambdaFunctionCanary \
             --payload '{}' \
