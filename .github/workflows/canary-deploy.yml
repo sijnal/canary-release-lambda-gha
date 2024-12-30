@@ -45,7 +45,7 @@ jobs:
           aws lambda update-alias \
             --function-name MyLambdaFunctionCanary \
             --name prod \
-            --function-version "${{ env.STABLE_VERSION }}" \
+            --function-version ${{ env.STABLE_VERSION }} \
             --routing-config '{"AdditionalVersionWeights": {"${{ env.VERSION }}": 0.1}}'
 
       - name: Monitor Canary Stability
@@ -63,7 +63,7 @@ jobs:
             aws lambda update-alias \
               --function-name MyLambdaFunctionCanary \
               --name prod \
-              --function-version "${{ env.STABLE_VERSION }}" \
+              --function-version ${{ env.STABLE_VERSION }} \
               --routing-config '{"AdditionalVersionWeights": {}}'
             exit 1
           else
