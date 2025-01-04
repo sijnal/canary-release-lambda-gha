@@ -47,6 +47,16 @@ jobs:
               --name prod \
               --function-version $STABLE_VERSION \
               --routing-config '{"AdditionalVersionWeights": {"${{ env.VERSION }}": 0.1}}'
+      
+      - name: cloudwatch logs
+        run: |
+          sleep 60
+          LOG_STREAM_NAME=$(aws logs describe-log-streams --log-group-name "/aws/lambda/MyLambdaFunctionCanary" --query 'logStreams[0].logStreamName' --output text)
+          
+          # Mostrar el nombre del log stream (opcional)
+          echo "Log Stream Name: $LOG_STREAM_NAME"
+
+          aws logs get-log-events --log-group-name "/aws/lambda/MyLambdaFunctionCanary" --log-stream-name "$LOG_STREAM_NAME"
 
       - name: Finalize Canary Deployment
         run: |
