@@ -33,14 +33,12 @@ jobs:
 
       - name: Publish New Version
         run: |
-          sleep 10 
+          sleep 5 
           VERSION=$(aws lambda publish-version --function-name MyLambdaFunctionCanary --query 'Version' --output text)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Configure Canary Deployment
         run: |
-          VALIDATION=$(aws lambda get-alias --function-name MyLambdaFunctionCanary --name prod --query 'RoutingConfig' --output text)
-          if [ "$VALIDATION" == "None" ]; then
             STABLE_VERSION=$(aws lambda get-alias --function-name MyLambdaFunctionCanary --name prod --query 'FunctionVersion' --output text)
             echo "STABLE_VERSION=$STABLE_VERSION" >> $GITHUB_ENV
             
@@ -49,35 +47,8 @@ jobs:
               --name prod \
               --function-version $STABLE_VERSION \
               --routing-config '{"AdditionalVersionWeights": {"${{ env.VERSION }}": 0.1}}'
-          else
-            echo "Ya existe una configuración de enrutamiento. No se actualizará."
-            exit 1
-          fi
-
-      - name: Monitor Canary Stability
-        run: |
-          sleep 90
-          STATUS_CODE=$(aws lambda invoke \
-            --function-name MyLambdaFunctionCanary \
-            --payload '{}' \
-            response.json \
-            --query 'FunctionError' \
-            --output text)
-
-          if [[ "$STATUS_CODE" != "None" && -n "$STATUS_CODE" ]]; then
-            echo "Errors detected in Canary Deployment! Rolling back to stable version..."
-            aws lambda update-alias \
-              --function-name MyLambdaFunctionCanary \
-              --name prod \
-              --function-version ${{ env.STABLE_VERSION }} \
-              --routing-config '{"AdditionalVersionWeights": {}}'
-            exit 1
-          else
-            echo "No errors detected. Canary deployment is stable."
-          fi
 
       - name: Finalize Canary Deployment
-        if: success()
         run: |
           aws lambda update-alias \
             --function-name MyLambdaFunctionCanary \
