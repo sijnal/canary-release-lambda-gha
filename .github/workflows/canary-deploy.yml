@@ -51,7 +51,7 @@ jobs:
       - name: cloudwatch logs
         run: |
           sleep 60
-          LOG_STREAM_NAME=$(aws logs describe-log-streams --log-group-name "/aws/lambda/MyLambdaFunctionCanary" --query 'logStreams[0].logStreamName' --output text)
+          LOG_STREAM_NAME=$(aws logs describe-log-streams --log-group-name "/aws/lambda/MyLambdaFunctionCanary" --query 'logStreams[-1].logStreamName' --output text)
           
           # Mostrar el nombre del log stream
           echo "Log Stream Name: $LOG_STREAM_NAME"
