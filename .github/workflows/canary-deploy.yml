@@ -56,12 +56,28 @@ jobs:
           # Mostrar el nombre del log stream
           echo "Log Stream Name: $LOG_STREAM_NAME"
 
-          aws logs get-log-events --log-group-name "/aws/lambda/MyLambdaFunctionCanary" --log-stream-name "$LOG_STREAM_NAME"
+          ERROR_COUNT=$(aws logs get-log-events --log-group-name "/aws/lambda/MyLambdaFunctionCanary" --log-stream-name "2025/01/04/[5]3c361d132be44b63b52bbbe9f9a6ac0d" --output text | grep "ERROR" | wc -l)
+          echo "Cantidad de errores encontrados: $ERROR_COUNT"
 
-      - name: Finalize Canary Deployment
-        run: |
-          aws lambda update-alias \
-            --function-name MyLambdaFunctionCanary \
-            --name prod \
-            --function-version ${{ env.VERSION }} \
-            --routing-config '{"AdditionalVersionWeights": {}}'
+          if [ "$ERROR_COUNT" -gt 1 ]; then
+            echo "Se encontraron más de 1 error. Realizando rollback a la versión estable..."
+
+            aws lambda update-alias \
+                --function-name MyLambdaFunctionCanary \
+                --name prod \
+                --function-version $STABLE_VERSION \
+                --routing-config '{"AdditionalVersionWeights": {}}'
+
+            echo "Rollback realizado a la versión $STABLE_VERSION."
+          else
+              echo "Se realizó la prueba de canary deployment con éxito."
+
+              aws lambda update-alias \
+                --function-name MyLambdaFunctionCanary \
+                --name prod \
+                --function-version ${{ env.VERSION }} \
+                --routing-config '{"AdditionalVersionWeights": {}}'
+
+              echo "Se actualizó la versión estable a la versión ${{ env.VERSION }}."
+          fi
+
