@@ -56,7 +56,7 @@ jobs:
           # Mostrar el nombre del log stream
           echo "Log Stream Name: $LOG_STREAM_NAME"
 
-          ERROR_COUNT=$(aws logs get-log-events --log-group-name "/aws/lambda/MyLambdaFunctionCanary" --log-stream-name "2025/01/04/[5]3c361d132be44b63b52bbbe9f9a6ac0d" --output text | grep "ERROR" | wc -l)
+          ERROR_COUNT=$(aws logs get-log-events --log-group-name "/aws/lambda/MyLambdaFunctionCanary" --log-stream-name "$LOG_STREAM_NAME" --output text | grep "ERROR" | wc -l)
           echo "Cantidad de errores encontrados: $ERROR_COUNT"
 
           if [ "$ERROR_COUNT" -gt 1 ]; then
