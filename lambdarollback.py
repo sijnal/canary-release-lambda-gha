@@ -1,4 +1,5 @@
 import boto3
+import re
 
 def lambda_handler(event, context):
     lambda_client = boto3.client('lambda')
@@ -12,31 +13,57 @@ def lambda_handler(event, context):
     traffic_increment = 0.1  # Incremento del tráfico (en %)
 
     log_group_name = f"/aws/lambda/{function_name}"
-
+    print("nombre del grupo: ", log_group_name)
     try:
         # Obtener RoutingConfig del alias 'prod' de la lambda
         alias_response = lambda_client.get_alias(
             FunctionName=function_name,
             Name='prod'
         )
+        print("datos del alias:", alias_response)
+
         routing_config = alias_response.get('RoutingConfig', {"AdditionalVersionWeights": {}})
+        print("versiones adicional en el alias:", routing_config)
 
         # Validar tráfico actual para la nueva versión
         current_traffic = routing_config.get("AdditionalVersionWeights", {}).get(new_version, 0)
+        print("trafico inicial:", current_traffic)
 
         if current_traffic < 0.9:
+            print("trafico:", current_traffic)
             log_streams = logs_client.describe_log_streams(
                 logGroupName=log_group_name,
                 orderBy='LastEventTime',
                 descending=True,
-                limit=1
+                limit=10
             )
-            
-            log_stream_name = log_streams['logStreams'][0]['logStreamName']
-            log_events = logs_client.get_log_events(
-                logGroupName=log_group_name,
-                logStreamName=log_stream_name
-            )
+            print("logs:", log_streams)
+
+            if 'logStreams' not in log_streams:
+                print("No logs found for the function.")
+                return
+
+            log_events = []
+
+            # Buscar en los log streams el que contenga el número dentro de los corchetes
+            for log_stream in log_streams['logStreams']:
+                log_stream_name = log_stream['logStreamName']
+                
+                # Usar una expresión regular para encontrar el número dentro de los corchetes
+                match = re.search(r'\[(\d+)\]', log_stream_name)
+                if match:
+                    # Obtener el número dentro de los corchetes
+                    log_version = match.group(1)
+                    
+                    # Compara si el número coincide con la versión que buscas
+                    if log_version == new_version:
+                        print(f"Log stream {log_stream_name} matches the version {new_version}.")
+                        
+                        # Obtener los eventos del log stream
+                        log_events = logs_client.get_log_events(
+                            logGroupName=log_group_name,
+                            logStreamName=log_stream_name
+                        )
             
             error_count = sum(1 for event in log_events['events'] if "ERROR" in event['message'])
             print(f"Errores detectados en la versión {new_version}: {error_count}")
