@@ -50,45 +50,27 @@ jobs:
       
       - name: Configure EventBridge Rule
         run: |
-          # Construir el patrón del evento dinámicamente
-          EVENT_PATTERN=$(cat <<EOF
-          {
-            "source": ["aws.lambda"],
-            "detail-type": ["Lambda Function Invocation Result"],
-            "detail": {
-              "function-name": ["MyLambdaFunctionCanary"],
-              "requestContext": {
-                "functionVersion": ["${{ env.VERSION }}"]
-              },
-              "responsePayload": {
-                "statusCode": [{"numeric": [">=", 400]}]
-              }
-            }
-          }
-          EOF
-          )
-                
-          # Crear la regla de EventBridge
           aws events put-rule \
             --name CanaryDeploymentErrorRule \
-            --event-pattern "$EVENT_PATTERN" \
+            --event-pattern '{
+              "source": ["aws.lambda"],
+              "detail-type": ["Lambda Function Invocation Result"],
+              "detail": {
+                "function-name": ["MyLambdaFunctionCanary"],
+                "requestContext": {
+                  "functionVersion": ["${{ env.VERSION }}"]
+                },
+                "responsePayload": {
+                  "statusCode": [{"numeric": [">=", 400]}]
+                }
+              }
+            }' \
             --state ENABLED
                 
-          # Construir el payload como una sola línea
-          INPUT_PAYLOAD=$(cat <<EOF | jq -c .
-          {
-            "stable_version": "1",
-            "function_name": "MyLambdaFunctionCanary"
-          }
-          EOF
-          )
-      
-          # Asociar el target a la regla
           aws events put-targets \
             --rule CanaryDeploymentErrorRule \
-            --targets "[{
-                \"Id\": \"LambdaRollbackTarget\",
-                \"Arn\": \"arn:aws:lambda:us-east-1:905418242537:function:RollbackFunction\",
-                \"Input\": \"$INPUT_PAYLOAD\"
-            }]"
-      
+            --targets '[{
+                "Id": "LambdaRollbackTarget",
+                "Arn": "arn:aws:lambda:us-east-1:905418242537:function:RollbackFunction",
+                "Input": "{\"stable_version\": \"${{ env.STABLE_VERSION }}\", \"function_name\": \"MyLambdaFunctionCanary\"}"
+            }]'
