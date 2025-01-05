@@ -74,10 +74,10 @@ jobs:
             --event-pattern "$EVENT_PATTERN" \
             --state ENABLED
                 
-          # Construir el target dinámicamente
-          INPUT_PAYLOAD=$(cat <<EOF
+          # Construir el payload como una sola línea
+          INPUT_PAYLOAD=$(cat <<EOF | jq -c .
           {
-            "stable_version": "${{ env.STABLE_VERSION }}",
+            "stable_version": "1",
             "function_name": "MyLambdaFunctionCanary"
           }
           EOF
