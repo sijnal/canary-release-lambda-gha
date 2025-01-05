@@ -64,8 +64,3 @@ jobs:
               "Input": "{\"stable_version\": \"${{ env.STABLE_VERSION }}\", \"function_name\": \"MyLambdaFunctionCanary\", \"new_version\": \"${{ env.VERSION }}\"}"
           }]'
 
-          aws lambda add-permission \
-            --function-name Rollbacklambdacanary \
-            --principal events.amazonaws.com \
-            --statement-id SomeUniqueID \
-            --action "lambda:InvokeFunction" 
