@@ -71,6 +71,6 @@ jobs:
             --rule CanaryDeploymentErrorRule \
             --targets '[{
                 "Id": "LambdaRollbackTarget",
-                "Arn": "arn:aws:lambda:REGION:ACCOUNT_ID:function:RollbackFunction",
+                "Arn": "arn:aws:lambda:us-east-1:851725517215:function:RollbackFunction",
                 "Input": "{\"stable_version\": \"${{ env.STABLE_VERSION }}\", \"function_name\": \"MyLambdaFunctionCanary\"}"
             }]'
