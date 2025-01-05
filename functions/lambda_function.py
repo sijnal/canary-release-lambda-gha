@@ -1,6 +1,9 @@
+import json
+
 def lambda_handler(event, context):
     return {
-        "body": "Hola esta es mi version estable 5!"
+        "statusCode": 200,
+        "body": json.dumps({
+            "message": "This will not run"
+        })
     }
-    
-    
