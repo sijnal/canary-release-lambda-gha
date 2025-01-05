@@ -60,8 +60,13 @@ jobs:
                 "requestContext": {
                   "functionVersion": ["${{ env.VERSION }}"]
                 },
+                "errorType": [{
+                  "exists": true
+                }],
                 "responsePayload": {
-                  "statusCode": [{"numeric": [">=", 400]}]
+                  "statusCode": [{
+                    "numeric": [">=", 400]
+                  }]
                 }
               }
             }' \
