@@ -1,10 +1,8 @@
 import json
 
 def lambda_handler(event, context):
-    # Simula un error con un código 400
+    # TODO implement
     return {
-        "statusCode": 400,
-        "body": json.dumps({
-            "message": "Simulated error for testing EventBridge rule."
-        })
+        'statusCode': 200,
+        'body': json.dumps('Hello from Lambda versions - 2!')
     }
