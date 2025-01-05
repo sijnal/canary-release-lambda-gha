@@ -3,7 +3,7 @@ run-name: ${{ github.actor }} start workflow
 on:
   push:
     branches:
-      - main
+      - testing
 
 jobs:
   deploy-canary-lambda:
@@ -48,36 +48,43 @@ jobs:
               --function-version $STABLE_VERSION \
               --routing-config '{"AdditionalVersionWeights": {"${{ env.VERSION }}": 0.1}}'
       
-      - name: cloudwatch logs
+      - name: Verify Deployment with Retries
         run: |
-          sleep 60
-          LOG_STREAM_NAME=$(aws logs describe-log-streams --log-group-name "/aws/lambda/MyLambdaFunctionCanary" --order-by "LastEventTime" --descending --query 'logStreams[0].logStreamName' --output text)
-          
-          # Mostrar el nombre del log stream
-          echo "Log Stream Name: $LOG_STREAM_NAME"
+          ERROR_COUNT=0
+          RETRIES=5
+          INTERVAL=5
 
-          ERROR_COUNT=$(aws logs get-log-events --log-group-name "/aws/lambda/MyLambdaFunctionCanary" --log-stream-name "$LOG_STREAM_NAME" --output text | grep "ERROR" | wc -l)
-          echo "Cantidad de errores encontrados: $ERROR_COUNT"
+          for i in $(seq 1 $RETRIES); do
+            LOG_STREAM_NAME=$(aws logs describe-log-streams --log-group-name "/aws/lambda/MyLambdaFunctionCanary" --order-by "LastEventTime" --descending --query 'logStreams[0].logStreamName' --output text)
 
-          if [ "$ERROR_COUNT" -gt 1 ]; then
-            echo "Se encontraron más de 1 error. Realizando rollback a la versión estable..."
+            if [ -n "$LOG_STREAM_NAME" ]; then
+              ERROR_COUNT=$(aws logs get-log-events --log-group-name "/aws/lambda/MyLambdaFunctionCanary" --log-stream-name "$LOG_STREAM_NAME" --output text | grep "ERROR" | wc -l)
+              if [ "$ERROR_COUNT" -gt 1 ]; then
+                echo "Se encontraron errores. Iniciando rollback..."
+                
+                aws lambda update-alias \
+                  --function-name MyLambdaFunctionCanary \
+                  --name prod \
+                  --function-version $STABLE_VERSION \
+                  --routing-config '{"AdditionalVersionWeights": {}}'
 
-            aws lambda update-alias \
-                --function-name MyLambdaFunctionCanary \
-                --name prod \
-                --function-version $STABLE_VERSION \
-                --routing-config '{"AdditionalVersionWeights": {}}'
+                echo "Rollback realizado a la versión estable: $STABLE_VERSION."
+                exit 1
+              fi
+            fi
+            
+            echo "No se encontraron errores. Intento $i/$RETRIES. Esperando $INTERVAL segundos..."
+            sleep $INTERVAL
+            INTERVAL=$((INTERVAL * 2)) # Incremento exponencial
+          done
 
-            echo "Rollback realizado a la versión $STABLE_VERSION."
-          else
-              echo "Se realizó la prueba de canary deployment con éxito."
+          echo "Se realizó la prueba de Canary Deployment con éxito."
 
-              aws lambda update-alias \
-                --function-name MyLambdaFunctionCanary \
-                --name prod \
-                --function-version ${{ env.VERSION }} \
-                --routing-config '{"AdditionalVersionWeights": {}}'
+          aws lambda update-alias \
+            --function-name MyLambdaFunctionCanary \
+            --name prod \
+            --function-version ${{ env.VERSION }} \
+            --routing-config '{"AdditionalVersionWeights": {}}'
 
-              echo "Se actualizó la versión estable a la versión ${{ env.VERSION }}."
-          fi
+          echo "Se actualizó la versión estable a la versión ${{ env.VERSION }}."
 
