@@ -75,7 +75,7 @@ jobs:
             
             echo "No se encontraron errores. Intento $i/$RETRIES. Esperando $INTERVAL segundos..."
             sleep $INTERVAL
-            INTERVAL=$((INTERVAL * 2)) # Incremento exponencial
+            INTERVAL=$((INTERVAL * 2))
           done
 
           echo "Se realizó la prueba de Canary Deployment con éxito."
