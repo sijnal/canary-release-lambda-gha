@@ -48,36 +48,18 @@ jobs:
               --function-version $STABLE_VERSION \
               --routing-config '{"AdditionalVersionWeights": {"${{ env.VERSION }}": 0.1}}'
       
-      - name: cloudwatch logs
+      - name: Configure Scheduled EventBridge Rule
         run: |
-          sleep 60
-          LOG_STREAM_NAME=$(aws logs describe-log-streams --log-group-name "/aws/lambda/MyLambdaFunctionCanary" --query 'logStreams[-1].logStreamName' --output text)
-          
-          # Mostrar el nombre del log stream
-          echo "Log Stream Name: $LOG_STREAM_NAME"
-
-          ERROR_COUNT=$(aws logs get-log-events --log-group-name "/aws/lambda/MyLambdaFunctionCanary" --log-stream-name "$LOG_STREAM_NAME" --output text | grep "ERROR" | wc -l)
-          echo "Cantidad de errores encontrados: $ERROR_COUNT"
-
-          if [ "$ERROR_COUNT" -gt 1 ]; then
-            echo "Se encontraron más de 1 error. Realizando rollback a la versión estable..."
-
-            aws lambda update-alias \
-                --function-name MyLambdaFunctionCanary \
-                --name prod \
-                --function-version $STABLE_VERSION \
-                --routing-config '{"AdditionalVersionWeights": {}}'
-
-            echo "Rollback realizado a la versión $STABLE_VERSION."
-          else
-              echo "Se realizó la prueba de canary deployment con éxito."
-
-              aws lambda update-alias \
-                --function-name MyLambdaFunctionCanary \
-                --name prod \
-                --function-version ${{ env.VERSION }} \
-                --routing-config '{"AdditionalVersionWeights": {}}'
-
-              echo "Se actualizó la versión estable a la versión ${{ env.VERSION }}."
-          fi
-
+          # Crear la regla programada para que se ejecute cada 5 minutos
+          aws events put-rule \
+            --name CanaryDeploymentScheduledRule \
+            --schedule-expression "rate(5 minutes)" \
+            --state ENABLED
+                
+          aws events put-targets \
+            --rule CanaryDeploymentErrorRule \
+            --targets '[{
+              "Id": "LambdaRollbackTarget",
+              "Arn": "arn:aws:lambda:us-east-1:891377042460:function:Rollbacklambdacanary",
+              "Input": "{\"stable_version\": \"${{ env.STABLE_VERSION }}\", \"function_name\": \"MyLambdaFunctionCanary\", \"new_version\": \"${{ env.VERSION }}\"}"
+          }]'
