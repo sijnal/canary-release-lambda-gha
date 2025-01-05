@@ -31,39 +31,50 @@ def lambda_handler(event, context):
 
         if current_traffic < 0.9:
             print("trafico:", current_traffic)
-            log_streams = logs_client.describe_log_streams(
-                logGroupName=log_group_name,
-                orderBy='LastEventTime',
-                descending=True,
-                limit=10
-            )
-            print("logs:", log_streams)
+            
+            try:
+                log_streams = logs_client.describe_log_streams(
+                    logGroupName=log_group_name,
+                    orderBy='LastEventTime',
+                    descending=True,
+                    limit=5
+                )
+                print("logs:", log_streams)
 
-            if 'logStreams' not in log_streams:
-                print("No logs found for the function.")
+                if 'logStreams' not in log_streams or len(log_streams['logStreams']) == 0:
+                    print("No logs found for the function.")
+                    return
+            except logs_client.exceptions.ClientError as e:
+                print(f"Error al obtener los logs: {str(e)}")
                 return
 
             log_events = []
-
+            found_match = False
             # Buscar en los log streams el que contenga el número dentro de los corchetes
             for log_stream in log_streams['logStreams']:
                 log_stream_name = log_stream['logStreamName']
+                print(log_stream_name)
                 
                 # Usar una expresión regular para encontrar el número dentro de los corchetes
                 match = re.search(r'\[(\d+)\]', log_stream_name)
                 if match:
                     # Obtener el número dentro de los corchetes
                     log_version = match.group(1)
+                    print(log_version)
                     
                     # Compara si el número coincide con la versión que buscas
                     if log_version == new_version:
                         print(f"Log stream {log_stream_name} matches the version {new_version}.")
+                        found_match = True
                         
                         # Obtener los eventos del log stream
                         log_events = logs_client.get_log_events(
                             logGroupName=log_group_name,
                             logStreamName=log_stream_name
                         )
+            if not found_match:
+                print(f"No log stream found for version {new_version}.")
+                return
             
             error_count = sum(1 for event in log_events['events'] if "ERROR" in event['message'])
             print(f"Errores detectados en la versión {new_version}: {error_count}")
@@ -86,7 +97,7 @@ def lambda_handler(event, context):
 
             # Incrementar tráfico en 10%
             current_traffic = routing_config["AdditionalVersionWeights"][new_version]
-            new_traffic = current_traffic + traffic_increment
+            new_traffic = round(current_traffic + traffic_increment, 1)
             routing_config["AdditionalVersionWeights"][new_version] = new_traffic
             
             lambda_client.update_alias(
@@ -113,3 +124,4 @@ def lambda_handler(event, context):
     except Exception as e:
         print(f"Error durante el proceso de Canary Deployment: {str(e)}")
         raise e
+
