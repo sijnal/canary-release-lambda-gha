@@ -48,43 +48,29 @@ jobs:
               --function-version $STABLE_VERSION \
               --routing-config '{"AdditionalVersionWeights": {"${{ env.VERSION }}": 0.1}}'
       
-      - name: Verify Deployment with Retries
+      - name: Configure EventBridge Rule
         run: |
-          ERROR_COUNT=0
-          RETRIES=5
-          INTERVAL=5
-
-          for i in $(seq 1 $RETRIES); do
-            LOG_STREAM_NAME=$(aws logs describe-log-streams --log-group-name "/aws/lambda/MyLambdaFunctionCanary" --order-by "LastEventTime" --descending --query 'logStreams[0].logStreamName' --output text)
-
-            if [ -n "$LOG_STREAM_NAME" ]; then
-              ERROR_COUNT=$(aws logs get-log-events --log-group-name "/aws/lambda/MyLambdaFunctionCanary" --log-stream-name "$LOG_STREAM_NAME" --output text | grep "ERROR" | wc -l)
-              if [ "$ERROR_COUNT" -gt 1 ]; then
-                echo "Se encontraron errores. Iniciando rollback..."
+          aws events put-rule \
+            --name CanaryDeploymentErrorRule \
+            --event-pattern '{
+              "source": ["aws.lambda"],
+              "detail-type": ["Lambda Function Invocation Result"],
+              "detail": {
+                "function-name": ["MyLambdaFunctionCanary"],
+                "requestContext": {
+                  "functionVersion": ["${{ env.VERSION }}"]
+                },
+                "responsePayload": {
+                  "statusCode": ["5xx", "4xx"]
+                }
+              }
+            }' \
+            --state ENABLED
                 
-                aws lambda update-alias \
-                  --function-name MyLambdaFunctionCanary \
-                  --name prod \
-                  --function-version $STABLE_VERSION \
-                  --routing-config '{"AdditionalVersionWeights": {}}'
-
-                echo "Rollback realizado a la versión estable: $STABLE_VERSION."
-                exit 1
-              fi
-            fi
-            
-            echo "No se encontraron errores. Intento $i/$RETRIES. Esperando $INTERVAL segundos..."
-            sleep $INTERVAL
-            INTERVAL=$((INTERVAL * 2))
-          done
-
-          echo "Se realizó la prueba de Canary Deployment con éxito."
-
-          aws lambda update-alias \
-            --function-name MyLambdaFunctionCanary \
-            --name prod \
-            --function-version ${{ env.VERSION }} \
-            --routing-config '{"AdditionalVersionWeights": {}}'
-
-          echo "Se actualizó la versión estable a la versión ${{ env.VERSION }}."
-
+          aws events put-targets \
+            --rule CanaryDeploymentErrorRule \
+            --targets '[{
+                "Id": "LambdaRollbackTarget",
+                "Arn": "arn:aws:lambda:REGION:ACCOUNT_ID:function:RollbackFunction",
+                "Input": "{\"stable_version\": \"${{ env.STABLE_VERSION }}\", \"function_name\": \"MyLambdaFunctionCanary\"}"
+            }]'
