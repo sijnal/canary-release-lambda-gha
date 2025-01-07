@@ -10,15 +10,16 @@ def lambda_handler(event, context):
     stable_version = event['stable_version']
     function_name = event['function_name']
     new_version = event['new_version']  # Versión que se desea probar
+    alias_name = event['alias_name']
     traffic_increment = 0.1  # Incremento del tráfico (en %)
 
     log_group_name = f"/aws/lambda/{function_name}"
     print("nombre del grupo: ", log_group_name)
     try:
-        # Obtener RoutingConfig del alias 'prod' de la lambda
+        # Obtener RoutingConfig del alias 'alias_name' de la lambda
         alias_response = lambda_client.get_alias(
             FunctionName=function_name,
-            Name='prod'
+            Name=alias_name
         )
         print("datos del alias:", alias_response)
 
@@ -84,7 +85,7 @@ def lambda_handler(event, context):
                 print("Se detectaron más de 1 error. Realizando rollback a la versión estable...")
                 lambda_client.update_alias(
                     FunctionName=function_name,
-                    Name='prod',
+                    Name=alias_name,
                     FunctionVersion=stable_version,
                     RoutingConfig={"AdditionalVersionWeights": {}}
                 )
@@ -102,7 +103,7 @@ def lambda_handler(event, context):
             
             lambda_client.update_alias(
                 FunctionName=function_name,
-                Name='prod',
+                Name=alias_name,
                 FunctionVersion=stable_version,
                 RoutingConfig=routing_config
             )
@@ -112,7 +113,7 @@ def lambda_handler(event, context):
             print("Tráfico completamente dirigido a la nueva versión. Canary Deployment exitoso.")
             lambda_client.update_alias(
                 FunctionName=function_name,
-                Name='prod',
+                Name=alias_name,
                 FunctionVersion=new_version,
                 RoutingConfig={"AdditionalVersionWeights": {}}
             )

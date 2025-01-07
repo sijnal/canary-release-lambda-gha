@@ -5,8 +5,4 @@ Debe existir el alias - prod
 o tenerlas en variables de entorno
 
 
-aws lambda add-permission \
-            --function-name Rollbacklambdacanary \
-            --principal events.amazonaws.com \
-            --statement-id SomeUniqueID \
-            --action "lambda:InvokeFunction"z
+Id640c301e-9904-4f4d-b373-71750e0a76eb
