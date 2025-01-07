@@ -5,4 +5,4 @@ Debe existir el alias - prod
 o tenerlas en variables de entorno
 
 
-Id640c301e-9904-4f4d-b373-71750e0a76eb
+aws events list-targets-by-rule --rule CanaryDeploymentScheduledRule --query 'Targets[*].[Id,Arn]' --output table
