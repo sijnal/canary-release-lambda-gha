@@ -59,9 +59,9 @@ jobs:
           aws events put-targets \
             --rule CanaryDeploymentScheduledRule \
             --targets '[{
-              "Id": "LambdaRollbackTarget",
-              "Arn": "arn:aws:lambda:us-east-1:975050090184:function:Rollbacklambdacanary",
-              "Input": "{\"stable_version\": \"${{ env.STABLE_VERSION }}\", \"function_name\": \"MyLambdaFunctionCanary\", \"new_version\": \"${{ env.VERSION }}\"}"
+              "Id": "Id640c301e-9904-4f4d-b373-71750e0a76eb",
+              "Arn": "arn:aws:lambda:us-east-1:339713189595:function:Rollbacklambdacanary",
+              "Input": "{\"stable_version\": \"${{ env.STABLE_VERSION }}\", \"function_name\": \"MyLambdaFunctionCanary\", \"new_version\": \"${{ env.VERSION }}\", \"alias_name\": \"prod\"}"
           }]'
 
 
