@@ -64,3 +64,5 @@ jobs:
               "Input": "{\"stable_version\": \"${{ env.STABLE_VERSION }}\", \"function_name\": \"MyLambdaFunctionCanary\", \"new_version\": \"${{ env.VERSION }}\", \"alias_name\": \"prod\"}"
           }]'
 
+
+
