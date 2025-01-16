@@ -65,7 +65,7 @@ jobs:
             --rule CanaryDeploymentScheduledRule \
             --targets '[{
               "Id": "Id3caaafbc-f41c-44fb-a0e2-c302806fb04e",
-              "Arn": "arn:aws:lambda:us-east-1:339713189595:function:Rollbacklambdacanary",
+              "Arn": "arn:aws:lambda:us-east-1:533267251504:function:Rollbacklambdacanary",
               "Input": "{\"stable_version\": \"${{ env.STABLE_VERSION }}\", \"function_name\": \"${{ env.NAME_LAMBDA }}\", \"new_version\": \"${{ env.VERSION }}\", \"alias_name\": \"${{ env.NAME_LAMBDA_ALIAS }}\"}"
           }]'
 
