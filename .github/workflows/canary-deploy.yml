@@ -46,7 +46,8 @@ jobs:
       - name: Configure Canary Deployment
         run: |
             STABLE_VERSION=$(aws lambda get-alias --function-name ${{ env.NAME_LAMBDA }} --name ${{ env.NAME_LAMBDA_ALIAS }} --query 'FunctionVersion' --output text)
-            
+            echo "STABLE_VERSION=$STABLE_VERSION" >> $GITHUB_ENV
+
             aws lambda update-alias \
               --function-name ${{ env.NAME_LAMBDA }} \
               --name ${{ env.NAME_LAMBDA_ALIAS }} \
