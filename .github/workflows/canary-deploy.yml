@@ -5,6 +5,12 @@ on:
     branches:
       - main
 
+env:
+  AWS_REGION: us-east-1
+  WORKING_DIR: ./functions
+  NAME_LAMBDA: MyLambdaFunctionCanary
+  NAME_LAMBDA_ALIAS: prod
+
 jobs:
   deploy-canary-lambda:
     runs-on: ubuntu-latest
@@ -14,7 +20,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Package Lambda Code
-        working-directory: ./functions
+        working-directory: ${{ env.WORKING_DIR }}
         run: |
           zip -r ../lambda_package.zip .  
 
@@ -23,28 +29,27 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1  
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Update Lambda Function Code
         run: |
           aws lambda update-function-code \
-            --function-name MyLambdaFunctionCanary \
+            --function-name ${{ env.NAME_LAMBDA }} \
             --zip-file fileb://lambda_package.zip
 
       - name: Publish New Version
         run: |
           sleep 5 
-          VERSION=$(aws lambda publish-version --function-name MyLambdaFunctionCanary --query 'Version' --output text)
+          VERSION=$(aws lambda publish-version --function-name ${{ env.NAME_LAMBDA }} --query 'Version' --output text)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Configure Canary Deployment
         run: |
-            STABLE_VERSION=$(aws lambda get-alias --function-name MyLambdaFunctionCanary --name prod --query 'FunctionVersion' --output text)
-            echo "STABLE_VERSION=$STABLE_VERSION" >> $GITHUB_ENV
+            STABLE_VERSION=$(aws lambda get-alias --function-name ${{ env.NAME_LAMBDA }} --name ${{ env.NAME_LAMBDA_ALIAS }} --query 'FunctionVersion' --output text)
             
             aws lambda update-alias \
-              --function-name MyLambdaFunctionCanary \
-              --name prod \
+              --function-name ${{ env.NAME_LAMBDA }} \
+              --name ${{ env.NAME_LAMBDA_ALIAS }} \
               --function-version $STABLE_VERSION \
               --routing-config '{"AdditionalVersionWeights": {"${{ env.VERSION }}": 0.1}}'
       
@@ -59,9 +64,9 @@ jobs:
           aws events put-targets \
             --rule CanaryDeploymentScheduledRule \
             --targets '[{
-              "Id": "Id640c301e-9904-4f4d-b373-71750e0a76eb",
+              "Id": "Id3caaafbc-f41c-44fb-a0e2-c302806fb04e",
               "Arn": "arn:aws:lambda:us-east-1:339713189595:function:Rollbacklambdacanary",
-              "Input": "{\"stable_version\": \"${{ env.STABLE_VERSION }}\", \"function_name\": \"MyLambdaFunctionCanary\", \"new_version\": \"${{ env.VERSION }}\", \"alias_name\": \"prod\"}"
+              "Input": "{\"stable_version\": \"${{ env.STABLE_VERSION }}\", \"function_name\": \"${{ env.NAME_LAMBDA }}\", \"new_version\": \"${{ env.VERSION }}\", \"alias_name\": \"${{ env.NAME_LAMBDA_ALIAS }}\"}"
           }]'
 
 

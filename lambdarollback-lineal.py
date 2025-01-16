@@ -80,7 +80,7 @@ def lambda_handler(event, context):
             error_count = sum(1 for event in log_events['events'] if "ERROR" in event['message'])
             print(f"Errores detectados en la versión {new_version}: {error_count}")
 
-            if error_count > 1:
+            if error_count > 0:
                 # Si hay errores, realizar rollback
                 print("Se detectaron más de 1 error. Realizando rollback a la versión estable...")
                 lambda_client.update_alias(
